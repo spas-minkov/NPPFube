@@ -1,11 +1,13 @@
 import pyodbc
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as Et
+import configparser as cp
 
 
 def read_db(query_type):
-    connection = pyodbc.connect(
-        'DRIVER={ODBC Driver 17 for SQL Server};Server=192.168.100.65;port=1433;Database=Viamedis_DEV_MCO_F;uid=batch'
-        ';pwd=hq41oy5t;')
+    config = cp.RawConfigParser()
+    config.read('config.properties')
+    db_string = config.get('Database', 'database.string')
+    connection = pyodbc.connect(db_string)
     cursor = connection.cursor()
     # if query is header then get header
     if query_type == "Header":
@@ -22,7 +24,7 @@ def read_db(query_type):
 
 def parse_record(xml_string):
     # create element tree object
-    tree = ET.ElementTree(ET.fromstring(xml_string))
+    tree = Et.ElementTree(Et.fromstring(xml_string))
 
     # get root element
     root = tree.getroot()
@@ -54,10 +56,8 @@ def parse_record(xml_string):
 
 def main():
     records_desc = {"REC001": ["Header", "000"], "REC002": ["Body", "444"], "REC003": ["Footer", "999"]}
-    file_num = 13
     file_label = "FUBE_V2"
     file_regex = r"^.{21}(FUBXM|FUBXE)"
-    # ini_header = "[FT0"+str(file_num)+"_"+file_label+"]"
     ini_header = "["+file_label+"]"
 
     #####################################################
@@ -84,7 +84,7 @@ def main():
         row = read_db(records_desc[record_key][0])
         # parse record
         field_labels, field_widths = parse_record(row[0])
-        # add record to records dictionary
+        # add record to the records dictionary
         record = {
             record_key + "_Label": records_desc[record_key][0],
             record_key + "_Marker": "^" + records_desc[record_key][1],
