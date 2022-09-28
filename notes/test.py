@@ -73,7 +73,7 @@ def main():
     newsitems = parseXML('topnewsfeed.xml')
 
     # store news items in a csv file
-    savetoCSV(newsitems, 'topnews.csv')
+    savetoCSV(newsitems, '../output/topnews.csv')
 
 
 if __name__ == "__main__":

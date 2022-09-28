@@ -5,7 +5,7 @@ import configparser as cp
 
 def read_db(query_type):
     config = cp.RawConfigParser()
-    config.read('config.properties')
+    config.read('./config/config.properties')
     db_string = config.get('Database', 'database.string')
     connection = pyodbc.connect(db_string)
     cursor = connection.cursor()
@@ -120,7 +120,7 @@ def main():
     file = {k.replace(" ", ""): v for k, v in file.items()}
 
     # write file header properties to file each on a new line
-    with open("file_header_properties.txt", "w") as f:
+    with open("output/file_header_properties.txt", "w") as f:
         f.write(ini_header + "\n")
         for key, value in file.items():
             f.write(key + "=" + str(value).replace("'", "").replace("[", "").replace("]", "").replace(" ", "") + "\n")
