@@ -4,7 +4,7 @@ import config.properties as prop
 
 
 def read_db(query_type):
-    connection = pyodbc.connect(prop.DATABASE_STRING)
+    connection = pyodbc.connect(prop.DB_CONN_STRING)
     cursor = connection.cursor()
     # if query is header then get header
     if query_type == "Header":
