@@ -30,28 +30,45 @@ def parse_record(xml_string):
     root = tree.getroot()
 
     # create empty list for news items
-    field_labels = {}
-    field_widths = {}
+    field_labels_dict = {}
+    field_widths_dict = {}
 
     for item in root:
         name = item.find("Name")
         widths = item.find("Length")
         index = item.find("BeginIndex")
+        description = item.find("Description")
         # append name to fieldnames
-        field_labels.update({int(index.text): name.text})
+        field_labels_dict.update({int(index.text): name.text + "--" + description.text.replace(" ", "_")})
         # append len to fieldwidths
-        field_widths.update({int(index.text): widths.text})
+        field_widths_dict.update({int(index.text): widths.text})
 
-    # field_labels to list
-    field_labels = [field_labels[i] for i in sorted(field_labels.keys())]
-    # field_widths to list
-    field_widths = [field_widths[i] for i in sorted(field_widths.keys())]
+    fild_starts = [i for i in sorted(field_labels_dict.keys())]
+    # field_labels to sorted by keys list
+    field_labels = [field_labels_dict[i] for i in sorted(field_labels_dict.keys())]
+    # field_widths to sorted by keys list
+    field_widths = [field_widths_dict[i] for i in sorted(field_widths_dict.keys())]
 
-    if field_labels[0] != "FETYLIGN" and field_labels[0] != "FUTYLIGN":
+    # Add header field if missing
+    if not field_labels[0].startswith("FETYLIGN") and not field_labels[0].startswith("FUTYLIGN"):
         field_labels.insert(0, "FUTYLIGN")
         field_widths.insert(0, '3')
+        fild_starts.insert(0, 1)
 
-    return field_labels, field_widths
+    # Add filler field in case of a hole in field description
+    field_labels_with_fillers = []
+    field_widths_with_fillers = []
+    for i in range(len(fild_starts)):
+        if i != 0 and (fild_starts[i] - fild_starts[i-1] != int(field_widths[i-1])):
+            field_labels_with_fillers.append("FILLER")
+            field_widths_with_fillers.append(str(fild_starts[i] - fild_starts[i-1] - int(field_widths[i-1])))
+            field_labels_with_fillers.append(field_labels[i])
+            field_widths_with_fillers.append(field_widths[i])
+        else:
+            field_labels_with_fillers.append(field_labels[i])
+            field_widths_with_fillers.append(field_widths[i])
+
+    return field_labels_with_fillers, field_widths_with_fillers
 
 
 def main():
