@@ -1,13 +1,10 @@
 import pyodbc
 import xml.etree.ElementTree as Et
-import configparser as cp
+import config.properties as prop
 
 
 def read_db(query_type):
-    config = cp.RawConfigParser()
-    config.read('./config/config.properties')
-    db_string = config.get('Database', 'database.string')
-    connection = pyodbc.connect(db_string)
+    connection = pyodbc.connect(prop.DATABASE_STRING)
     cursor = connection.cursor()
     # if query is header then get header
     if query_type == "Header":
