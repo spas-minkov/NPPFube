@@ -107,12 +107,8 @@ def main():
         }
         records.update(record)
 
-    # print record
-    print(records)
-
-    # append records to file
+     # append records to file
     file.update(records)
-    print(file)
     # remove spaces from string
     file = {k.replace(" ", ""): v for k, v in file.items()}
 
@@ -120,7 +116,10 @@ def main():
     with open("output/file_header_properties.txt", "w") as f:
         f.write(ini_header + "\n")
         for key, value in file.items():
-            f.write(key + "=" + str(value).replace("'", "").replace("[", "").replace("]", "").replace(" ", "") + "\n")
+            line = key + "=" + str(value).replace("'", "").replace("[", "").replace("]", "").replace(" ", "").replace(
+                "--", " - ")
+            print(line)
+            f.write(line + "\n")
 
 
 if __name__ == "__main__":

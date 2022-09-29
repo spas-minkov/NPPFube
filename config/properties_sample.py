@@ -1,3 +1,4 @@
+# Rename this file to properties.py and update the values to match your environment.
 DB_DRIVER = "{ODBC Driver 17 for SQL Server}"
 DB_SERVER = "XXX.XXX.XXX.XXX"
 DB_PORT = "XXXX"
