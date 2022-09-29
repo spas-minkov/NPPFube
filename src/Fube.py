@@ -3,18 +3,18 @@ import xml.etree.ElementTree as Et
 import config.properties as prop
 
 
-def read_db(query_type):
+def read_db(file_label, query_type):
     connection = pyodbc.connect(prop.DB_CONN_STRING)
     cursor = connection.cursor()
+    query = """SELECT [format] FROM [dbo].[STRUCTURED_LINE_FORMAT] WHERE [id] = ?;"""
+
     # if query is header then get header
-    if query_type == "Header":
-        cursor.execute("SELECT format from STRUCTURED_LINE_FORMAT where id = 'FUBE_V2_HEADER';")
-    # if query is footer then get footer
-    elif query_type == "Footer":
-        cursor.execute("SELECT format from STRUCTURED_LINE_FORMAT where id = 'FUBE_V2_FOOTER';")
-    # if query is empty then get body
+    if query_type == "Body":
+        query_val = file_label
     else:
-        cursor.execute("SELECT format from STRUCTURED_LINE_FORMAT where id = 'FUBE_V2';")
+        query_val = file_label + "_" + str(query_type).upper()
+    cursor.execute(query, query_val)
+
     row = cursor.fetchone()
     return row
 
@@ -70,14 +70,14 @@ def parse_record(xml_string):
 
 def main():
     records_desc = {"REC001": ["Header", "000"], "REC002": ["Body", "444"], "REC003": ["Footer", "999"]}
-    file_label = "FUBE_V2"
+    fube_version = "FUBE_V2"
     file_regex = r"^.{21}(FUBXM|FUBXE)"
-    ini_header = "["+file_label+"]"
+    ini_header = "["+fube_version+"]"
 
     #####################################################
 
     file = {
-        "FileLabel": file_label,
+        "FileLabel": fube_version,
         "FileTheme": "Spectrum",
         "RecordTerminator": "",
         "MultiByteChars": "Y",
@@ -95,7 +95,7 @@ def main():
     # loop through records
     for record_key in records_desc:
         # get record from db
-        row = read_db(records_desc[record_key][0])
+        row = read_db(fube_version, records_desc[record_key][0])
         # parse record
         field_labels, field_widths = parse_record(row[0])
         # add record to the records dictionary
