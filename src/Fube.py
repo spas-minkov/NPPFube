@@ -56,9 +56,9 @@ def parse_record(xml_string):
     field_labels_with_fillers = []
     field_widths_with_fillers = []
     for i in range(len(fild_starts)):
-        if i != 0 and (fild_starts[i] - fild_starts[i-1] != int(field_widths[i-1])):
+        if i != 0 and (fild_starts[i] - fild_starts[i - 1] != int(field_widths[i - 1])):
             field_labels_with_fillers.append("FILLER")
-            field_widths_with_fillers.append(str(fild_starts[i] - fild_starts[i-1] - int(field_widths[i-1])))
+            field_widths_with_fillers.append(str(fild_starts[i] - fild_starts[i - 1] - int(field_widths[i - 1])))
             field_labels_with_fillers.append(field_labels[i])
             field_widths_with_fillers.append(field_widths[i])
         else:
@@ -71,9 +71,12 @@ def parse_record(xml_string):
 def main():
     records_desc = {"REC001": ["Header", "000"], "REC002": ["Body", "444"], "REC003": ["Footer", "999"]}
     fube_version = "FUBE_V2"
+    # fube_version = "FUBE_V2.1"
+    # fube_version = "FUBE_V2.2"
     file_regex = r"^.{21}(FUBXM|FUBXE)"
-    ini_header = "["+fube_version+"]"
+    ini_header = "[" + fube_version + "]"
 
+    file_name = "NPP_" + fube_version + ".ini"
     #####################################################
 
     file = {
@@ -107,13 +110,13 @@ def main():
         }
         records.update(record)
 
-     # append records to file
+    # append records to file
     file.update(records)
     # remove spaces from string
     file = {k.replace(" ", ""): v for k, v in file.items()}
 
     # write file header properties to file each on a new line
-    with open("output/file_header_properties.txt", "w") as f:
+    with open("output/" + file_name, "w") as f:
         f.write(ini_header + "\n")
         for key, value in file.items():
             line = key + "=" + str(value).replace("'", "").replace("[", "").replace("]", "").replace(" ", "").replace(
