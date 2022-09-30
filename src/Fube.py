@@ -1,6 +1,9 @@
+import os
+
 import pyodbc
 import xml.etree.ElementTree as Et
 import config.properties as prop
+import config.fube_definitions as fube
 
 
 def read_db(file_label, query_type):
@@ -47,7 +50,8 @@ def parse_record(fube_version, xml_string):
     field_widths = [field_widths_dict[i] for i in sorted(field_widths_dict.keys())]
 
     # Add header field if missing
-    if not fube_version == "FUBE_V1" and not field_labels[0].startswith("FETYLIGN") and not field_labels[0].startswith("FUTYLIGN"):
+    if not fube_version == "FUBE_V1" and not field_labels[0].startswith("FETYLIGN") and not field_labels[0].startswith(
+            "FUTYLIGN"):
         field_labels.insert(0, "FUTYLIGN")
         field_widths.insert(0, '3')
         fild_starts.insert(0, 1)
@@ -69,65 +73,56 @@ def parse_record(fube_version, xml_string):
 
 
 def main():
-    # records_desc = {"REC001": ["Header", "000"], "REC002": ["Body", "444"], "REC003": ["Footer", "999"]}
-    # fube_version = "FUBE_V2"
-    # file_regex = r"^.{21}(FUBXM|FUBXE)"
+    #delete all files from output directory
+    for file in os.listdir(prop.OUTPUT_DIR):
+        os.remove(prop.OUTPUT_DIR + file)
 
-    # fube_version = "FUBE_V2_1"
-    # file_regex = r"^.{21}(FUBYM|FUBYE)"
+    for fube_version, records_desc, file_regex in fube.definitions:
+        ini_header = "[" + fube_version + "]"
+        file_name = "NPP_" + fube_version + ".ini"
 
-    # fube_version = "FUBE_V2_2"
-    # file_regex = r"^.{21}(FUBZM|FUBZE)"
-
-    records_desc = {"REC001": ["Body", "444"]}
-    fube_version = "FUBE_V1"
-    file_regex = r"^[^0][^0][^0]"
-
-    ini_header = "[" + fube_version + "]"
-    file_name = "NPP_" + fube_version + ".ini"
-    #####################################################
-
-    file = {
-        "FileLabel": fube_version,
-        "FileTheme": "Spectrum",
-        "RecordTerminator": "",
-        "MultiByteChars": "Y",
-        "ADFT_Line_01": "1",
-        "ADFT_Regex_01": file_regex,
-        "ADFT_Line_02": "",
-        "ADFT_Regex_02": "",
-        "ADFT_Line_03": "",
-        "ADFT_Regex_03": "",
-        "RecordTypes": ",".join(map(str, records_desc.keys())),
-    }
-    a, b, _ = ["e", "r"]
-    # empty records dictionary
-    records = {}
-    # loop through records
-    for record_key in records_desc:
-        # get record from db
-        row = read_db(fube_version, records_desc[record_key][0])
-        # parse record
-        field_labels, field_widths = parse_record(fube_version, row[0])
-        # add record to the records dictionary
-        record = {
-            record_key + "_Label": records_desc[record_key][0],
-            record_key + "_Marker": "^" + records_desc[record_key][1],
-            record_key + "_FieldLabels": ','.join(map(str, field_labels)),
-            record_key + "_FieldWidths": ','.join(map(str, field_widths))
+        file = {
+            "FileLabel": fube_version,
+            "FileTheme": "Spectrum",
+            "RecordTerminator": "",
+            "MultiByteChars": "Y",
+            "ADFT_Line_01": "1",
+            "ADFT_Regex_01": file_regex,
+            "ADFT_Line_02": "",
+            "ADFT_Regex_02": "",
+            "ADFT_Line_03": "",
+            "ADFT_Regex_03": "",
+            "RecordTypes": ",".join(map(str, records_desc.keys())),
         }
-        records.update(record)
 
-    # append records to file
-    file.update(records)
+        # empty records dictionary
+        records = {}
+        # loop through records
+        for record_key in records_desc:
+            # get record from db
+            row = read_db(fube_version, records_desc[record_key][0])
+            # parse record
+            field_labels, field_widths = parse_record(fube_version, row[0])
+            # add record to the records dictionary
+            record = {
+                record_key + "_Label": records_desc[record_key][0],
+                record_key + "_Marker": records_desc[record_key][1],
+                record_key + "_FieldLabels": ','.join(map(str, field_labels)),
+                record_key + "_FieldWidths": ','.join(map(str, field_widths))
+            }
+            records.update(record)
 
-    # write file header properties to file each on a new line
-    with open("output/" + file_name, "w") as f:
-        f.write(ini_header + "\n")
-        for key, value in file.items():
-            line = key + "=" + str(value)
-            print(line)
-            f.write(line + "\n")
+        # append records to file
+        file.update(records)
+
+        # write file header properties to file each on a new line
+        with open(prop.OUTPUT_DIR + file_name, "w") as f:
+            f.write(ini_header + "\n")
+            print("\n" + ini_header)
+            for key, value in file.items():
+                line = key + "=" + str(value)
+                print(line)
+                f.write(line + "\n")
 
 
 if __name__ == "__main__":
