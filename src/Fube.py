@@ -19,7 +19,7 @@ def read_db(file_label, query_type):
     return row
 
 
-def parse_record(xml_string):
+def parse_record(fube_version, xml_string):
     # create element tree object
     tree = Et.ElementTree(Et.fromstring(xml_string))
 
@@ -36,8 +36,8 @@ def parse_record(xml_string):
         index = item.find("BeginIndex")
         description = item.find("Description")
         # append name to fieldnames
-        field_labels_dict.update({int(index.text): name.text + "--" + description.text.replace(" ", "_")})
-        # append len to fieldwidths
+        field_labels_dict.update({int(index.text): name.text + " - " + description.text})
+        # append len to field widths
         field_widths_dict.update({int(index.text): widths.text})
 
     fild_starts = [i for i in sorted(field_labels_dict.keys())]
@@ -47,7 +47,7 @@ def parse_record(xml_string):
     field_widths = [field_widths_dict[i] for i in sorted(field_widths_dict.keys())]
 
     # Add header field if missing
-    if not field_labels[0].startswith("FETYLIGN") and not field_labels[0].startswith("FUTYLIGN"):
+    if not fube_version == "FUBE_V1" and not field_labels[0].startswith("FETYLIGN") and not field_labels[0].startswith("FUTYLIGN"):
         field_labels.insert(0, "FUTYLIGN")
         field_widths.insert(0, '3')
         fild_starts.insert(0, 1)
@@ -69,13 +69,21 @@ def parse_record(xml_string):
 
 
 def main():
-    records_desc = {"REC001": ["Header", "000"], "REC002": ["Body", "444"], "REC003": ["Footer", "999"]}
-    fube_version = "FUBE_V2"
-    # fube_version = "FUBE_V2.1"
-    # fube_version = "FUBE_V2.2"
-    file_regex = r"^.{21}(FUBXM|FUBXE)"
-    ini_header = "[" + fube_version + "]"
+    # records_desc = {"REC001": ["Header", "000"], "REC002": ["Body", "444"], "REC003": ["Footer", "999"]}
+    # fube_version = "FUBE_V2"
+    # file_regex = r"^.{21}(FUBXM|FUBXE)"
 
+    # fube_version = "FUBE_V2_1"
+    # file_regex = r"^.{21}(FUBYM|FUBYE)"
+
+    # fube_version = "FUBE_V2_2"
+    # file_regex = r"^.{21}(FUBZM|FUBZE)"
+
+    records_desc = {"REC001": ["Body", "444"]}
+    fube_version = "FUBE_V1"
+    file_regex = r"^[^0][^0][^0]"
+
+    ini_header = "[" + fube_version + "]"
     file_name = "NPP_" + fube_version + ".ini"
     #####################################################
 
@@ -90,9 +98,9 @@ def main():
         "ADFT_Regex_02": "",
         "ADFT_Line_03": "",
         "ADFT_Regex_03": "",
-        "RecordTypes": list(records_desc.keys()),
+        "RecordTypes": ",".join(map(str, records_desc.keys())),
     }
-
+    a, b, _ = ["e", "r"]
     # empty records dictionary
     records = {}
     # loop through records
@@ -100,27 +108,24 @@ def main():
         # get record from db
         row = read_db(fube_version, records_desc[record_key][0])
         # parse record
-        field_labels, field_widths = parse_record(row[0])
+        field_labels, field_widths = parse_record(fube_version, row[0])
         # add record to the records dictionary
         record = {
             record_key + "_Label": records_desc[record_key][0],
             record_key + "_Marker": "^" + records_desc[record_key][1],
-            record_key + "_FieldLabels": field_labels,
-            record_key + "_FieldWidths": field_widths
+            record_key + "_FieldLabels": ','.join(map(str, field_labels)),
+            record_key + "_FieldWidths": ','.join(map(str, field_widths))
         }
         records.update(record)
 
     # append records to file
     file.update(records)
-    # remove spaces from string
-    file = {k.replace(" ", ""): v for k, v in file.items()}
 
     # write file header properties to file each on a new line
     with open("output/" + file_name, "w") as f:
         f.write(ini_header + "\n")
         for key, value in file.items():
-            line = key + "=" + str(value).replace("'", "").replace("[", "").replace("]", "").replace(" ", "").replace(
-                "--", " - ")
+            line = key + "=" + str(value)
             print(line)
             f.write(line + "\n")
 
